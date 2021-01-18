@@ -4,19 +4,11 @@ import sys
 diffMap = dict()
 year : int = 2020
    
-def read_ints(file) -> [int]:
-    file = open(file, "r")
+def read_integers(filename):
+    with open(filename) as f:
+        return [int(x) for x in f]
 
-    lines = file.read().splitlines()
-    ints = []
-
-    for i in range(len(lines) - 1):
-        ints.append(int(lines[i]))
-
-    file.close()
-    return ints
-
-numbs = read_ints(sys.argv[1])
+numbs = read_integers(sys.argv[1])
 
 #
 # PART 1

@@ -15,12 +15,18 @@ main(List<String> args) {
   List<String> lines = new File(args[0]).readAsLinesSync();
 
   lines.forEach((element) {
-    analyzeSeat(element);
+    num seatId = analyzeSeat(element);
+    if (seatId > highestId) highestId = seatId;
+    seatIds.add(seatId.toInt());
   });
   print("Pt 1 : Highest ID $highestId");
 
   //print("SEATS : ${seatIds.toString()}");
 
+  ///
+  /// Part 2
+  ///
+  seatIds.sort();
   int previousDiff = 0;
   for (int i = 0; i < seatIds.length; i++) {
     if (i > 0) previousDiff = seatIds[i] - seatIds[i - 1];
@@ -31,7 +37,7 @@ main(List<String> args) {
   }
 }
 
-void analyzeSeat(String line) {
+int analyzeSeat(String line) {
   //print(line);
   num rowSeat = 0, rowMax = 64, colSeat = 0, colMax = 4;
   for (int i = 0; i < line.length; i++) {
@@ -49,8 +55,6 @@ void analyzeSeat(String line) {
     }
   }
   num seatId = (rowSeat * 8) + colSeat;
-  if (seatId > highestId) highestId = seatId;
-  seatIds.add(seatId.toInt());
-  seatIds.sort();
+  return seatId.toInt();
   //print("Seat number : $rowSeat:$colSeat");
 }

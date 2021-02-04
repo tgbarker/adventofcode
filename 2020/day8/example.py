@@ -10,9 +10,7 @@ class Instruction :
         self.action = str[0]
         self.number = int(str[1])       
 
-# This opens a handle to your file, in 'r' read mode
 file_handle = open(sys.argv[1], 'r')
-# Read in all the lines of your file into a list of lines
 lines_list = file_handle.readlines()
 
 instructionList = [ Instruction(line) for line in lines_list ]

@@ -8,38 +8,48 @@ emptySeat = "L"
 occupiedSeat = "#"
 floorSeat = "."
 adjacents = [(-1, 0),(1, 0),(0, -1),(0, 1),(-1, -1),(-1, 1),(1, -1), (1, 1),]
-oldSeatPlan = [list(line.rstrip()) for line in open(sys.argv[1])]
+originalSeatingPlan = [list(line.rstrip()) for line in open(sys.argv[1])]
 
-maxCol = len(oldSeatPlan[0])
-maxRow = len(oldSeatPlan)
+maxCol = len(originalSeatingPlan[0])
+maxRow = len(originalSeatingPlan)
 
 def countAdjacentOccupied(seats, row, col) -> int :
     occCount = 0
     for (xi, yi) in adjacents :
         xcoord = col+xi
         ycoord = row+yi
-        if seatIsInBounds(seats,xcoord, ycoord) :
-            if seats[ycoord][xcoord] == occupiedSeat :
-                occCount+=1
-        else :
-            continue
+        occCount += countOccupiedSeat(seats, xcoord, ycoord)
     return occCount
 
 def seatIsInBounds(seats, col, row) -> bool :
      return 0 <= col < maxCol and 0 <= row < maxRow
 
-def processMatrix(oldSeatPlan) :
-    newSeatPlan = deepcopy(oldSeatPlan)
-    for row in range(len(oldSeatPlan)) :
-        for col in range(len(oldSeatPlan[row])) :
-            if oldSeatPlan[row][col] == floorSeat:
+def countOccupiedSeat(seats, xcoord, ycoord) -> int :
+    if seatIsInBounds(seats,xcoord, ycoord) :
+        if seats[ycoord][xcoord] == occupiedSeat :
+            return 1
+        elif seats[ycoord][xcoord] == emptySeat :
+            return 0
+    return 0
+
+def processMatrix(seats) :
+    newSeatPlan = deepcopy(seats)
+    totalOccupiedSeats = 0
+    for row in range(len(seats)) :
+        for col in range(len(seats[row])) :
+            if seats[row][col] == floorSeat:
                 continue
-            occupiedAdjacentSeatCount = countAdjacentOccupied(oldSeatPlan, row, col)
-            if oldSeatPlan[row][col] == emptySeat and occupiedAdjacentSeatCount == 0 :
-                newSeatPlan[row][col] = occupiedSeat
-            if oldSeatPlan[row][col] == occupiedSeat and occupiedAdjacentSeatCount >= 4 :
-                newSeatPlan[row][col] = emptySeat
-    return newSeatPlan
+            occupiedAdjacentSeatCount = countAdjacentOccupied(seats, row, col)
+            totalOccupiedSeats += assignNewSeat(seats, newSeatPlan, row, col, occupiedAdjacentSeatCount, 4)
+    return (newSeatPlan, totalOccupiedSeats)
+
+def assignNewSeat(oldSeats, newSeats, row, col, occupiedSeatCount, adjacentMaxCount) -> int :
+    if oldSeats[row][col] == emptySeat and occupiedSeatCount == 0 :
+        newSeats[row][col] = occupiedSeat
+        return 1
+    if oldSeats[row][col] == occupiedSeat and occupiedSeatCount >= adjacentMaxCount :
+        newSeats[row][col] = emptySeat
+    return 0
 
 def countLineOfSightOccupied(seats, row, col) -> int : 
     occCount = 0
@@ -49,60 +59,43 @@ def countLineOfSightOccupied(seats, row, col) -> int :
         if not seatIsInBounds(seats, xcoord, ycoord) :
             continue
         if seats[ycoord][xcoord] == floorSeat :
-            while seatIsInBounds(seats, xcoord, ycoord) :
+            while seatIsInBounds(seats, xcoord, ycoord) and seats[ycoord][xcoord] == floorSeat:
                 xcoord = xcoord+xi
                 ycoord = ycoord+yi
-                if seatIsInBounds(seats, xcoord, ycoord):
-                    if seats[ycoord][xcoord] == occupiedSeat :
-                        occCount+=1
-                        break
-                    elif seats[ycoord][xcoord] == emptySeat :
-                        break 
+                occCount += countOccupiedSeat(seats, xcoord, ycoord)
         else : 
-            if seats[ycoord][xcoord] == occupiedSeat :
-                occCount+=1
-                continue
-            elif seats[ycoord][xcoord] == emptySeat :
-                continue 
+            occCount += countOccupiedSeat(seats, xcoord, ycoord) 
     return occCount
 
-def processMatrixPart2(oldSeatPlan) :
-    newSeatPlan = deepcopy(oldSeatPlan)
-    for row in range(len(oldSeatPlan)) :
-        for col in range(len(oldSeatPlan[row])) :
-            if oldSeatPlan[row][col] == floorSeat:
+def processMatrixPart2(seats) :
+    newSeatPlan = deepcopy(seats)
+    totalOccupiedSeats = 0
+    for row in range(len(seats)) :
+        for col in range(len(seats[row])) :
+            if seats[row][col] == floorSeat:
                 continue
-            occupiedAdjacentSeatCount = countLineOfSightOccupied(oldSeatPlan, row, col)
-            if oldSeatPlan[row][col] == emptySeat and occupiedAdjacentSeatCount == 0 :
-                newSeatPlan[row][col] = occupiedSeat
-            if oldSeatPlan[row][col] == occupiedSeat and occupiedAdjacentSeatCount >= 5 :
-                newSeatPlan[row][col] = emptySeat
-    return newSeatPlan
+            occupiedAdjacentSeatCount = countLineOfSightOccupied(seats, row, col)
+            totalOccupiedSeats += assignNewSeat(seats, newSeatPlan, row, col, occupiedAdjacentSeatCount, 5)
+    return (newSeatPlan, totalOccupiedSeats)
+
+def executeLoop(processFunction) :
+    lastCount = 0
+    nbRounds = 0
+    oldSeatPlan = deepcopy(originalSeatingPlan)
+    while True : 
+        (newSeatPlan, occCount ) = processFunction(oldSeatPlan)
+        nbRounds +=1
+        if lastCount == occCount :
+            print("finished", dict(Counter(itertools.chain(*newSeatPlan))) )
+            break
+        oldSeatPlan = newSeatPlan
+        lastCount = occCount
+    print("Nb rounds : ",nbRounds)
 
 ## PART 1
-lastCount = 0
-nbRounds = 0
-while True : 
-    newSeatPlan = processMatrix(oldSeatPlan)
-    occCount = dict(Counter(itertools.chain(*newSeatPlan)))[occupiedSeat]
-    nbRounds +=1
-    if lastCount == occCount :
-        print("finished", dict(Counter(itertools.chain(*newSeatPlan))) )
-        break
-    oldSeatPlan = newSeatPlan
-    lastCount = occCount
-print(nbRounds)
+print("Part 1 : ")
+executeLoop(processMatrix)
 
 ## PART 2
-lastCount = 0
-nbRounds = 0
-while True : 
-    newSeatPlan = processMatrixPart2(oldSeatPlan)
-    occCount = dict(Counter(itertools.chain(*newSeatPlan)))[occupiedSeat]
-    nbRounds +=1
-    if lastCount == occCount :
-        print("finished", dict(Counter(itertools.chain(*newSeatPlan))) )
-        break
-    oldSeatPlan = newSeatPlan
-    lastCount = occCount
-print(nbRounds)
+print("Part 2 : ")
+executeLoop(processMatrixPart2)
